@@ -1,0 +1,144 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Photon Demo</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.17.0/babel.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.3.2/react-with-addons.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.3.2/react-dom.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap/0.30.5/react-bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.min.js" type="text/javascript" charset="utf-8"></script>
+	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body>
+<style>
+body {
+  background: #eee;
+}
+
+#container {
+  background: #fff;
+  height: 100%;
+  left: 5%;
+  position: absolute;
+  right: 5%;
+}
+
+h1 {
+  text-align: center;
+}
+
+.nav {
+  padding-left: 15px;
+}
+
+.tabContent {
+  padding: 15px;
+}
+</style>
+<div id="container"></div>
+<script type="text/babel">
+// Babel gives you cutting edge JavaScript features!
+// https://babeljs.io/docs/learn-es2015/
+
+// ReactBootstrap gives you Bootstrap components for React!
+// https://react-bootstrap.github.io/components.html
+let Nav = ReactBootstrap.Nav, NavItem = ReactBootstrap.NavItem
+
+class TabContainer extends React.Component {
+  constructor(props) {
+    super(props)
+    
+    this.state = {
+      key: props.active || 0,
+      tabs: props.tabs || [],
+      contentClassName: props.contentClassName,
+    }
+  }
+  
+  render() {
+    let me = this
+    let state = me.state
+    let component = state.tabs[state.key].component
+    let content = typeof(component) === 'function' ? React.createElement(component) : component
+    
+    return <div>
+      <Nav bsStyle="tabs" activeKey={state.key} onSelect={(key)=>me.setState({ key })}>
+        {state.tabs.map((tab, index)=><NavItem eventKey={index} href={tab.url} disabled={tab.disabled}>{tab.title}</NavItem>)}
+      </Nav>
+      <div className={state.contentClassName}>{content}</div>
+    </div>
+  }
+}
+
+class BlinkLED extends React.Component {
+	constructor(props) {
+		super(props)
+		
+		this.state = {
+			deviceID: '37003a001547343433313338',
+			on: false
+		}
+	}
+	
+	toggleLed() {
+		let state = this.state
+		let requestURL = 'https://api.spark.io/v1/devices/' + state.deviceID + "/led/";
+		
+		let data = new FormData()
+		data.append('access_token', state.accessToken)
+		
+		state.on = !state.on
+		
+		fetch(requestURL, {
+			method: 'POST',
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: 'access_token=' + state.accessToken + '&arg=' + (state.on ? 'on' : 'off')
+		}).then((response)=>response.json())
+		.then((responseJson) => {
+			// Got response
+		})
+		.catch((error) => {
+			console.error(error)
+		})
+	}
+	
+	render() {
+		return <div>
+			<input placeholder="Device ID" onChange={(e)=>this.setState({deviceID: e.target.value})} value={this.state.deviceID} />
+			<input placeholder="Auth Token" onChange={(e)=>{this.setState({accessToken: e.target.value})}} value={this.state.accessToken} />
+			<hr/>
+			<button onClick={()=>this.toggleLed()}>Toggle LED</button>
+		</div>
+	}
+}
+
+class CustomContent extends React.Component {
+  render() {
+    return <div>Yes, I'm only a tab.</div>
+  }
+}
+
+class App extends React.Component {
+  render() {
+    let tabContainerProps = {
+      contentClassName: 'tabContent',
+      tabs: [
+        { title: 'Blink LED', url: '', component: BlinkLED },
+      ]
+    }
+  
+    return <div>
+      <h1>Photon Demo</h1>
+      <TabContainer {...tabContainerProps} />
+    </div>
+  }
+}
+
+ReactDOM.render(<App />, document.getElementById('container'))
+
+</script>
+</body>
+</html>
